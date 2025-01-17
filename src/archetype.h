@@ -1,17 +1,19 @@
 #include <stdio.h>
 #include <intrin.h>
-#include "vec3.h"
+// #include "vec3.h"
+#include <cglm/struct.h>
 #include <Array.h>
 #include <Map.h>
 
 typedef enum Signature Signature;
 enum Signature {
-    pos = 0b00000001,
-    vel = 0b00000010,
-    trq = 0b00000100,
+    nul = 0b0000000000000000000000000000000000000000000000000000000000000000,
+    pos = 0b0000000000000000000000000000000000000000000000000000000000000001,
+    vel = 0b0000000000000000000000000000000000000000000000000000000000000010,
+    trq = 0b0000000000000000000000000000000000000000000000000000000000000100,
 };
 
-bool queryTest(u8 a, u8 b) {
+bool queryTest(u64 a, u64 b) {
     return (a & b) == b;
 }
 
@@ -19,16 +21,16 @@ bool queryTest(u8 a, u8 b) {
 //---------------------------------------------------------------------------------------------------
 typedef struct MovementComponent MovementComponent;
 struct MovementComponent {
-    Array_vec4 pos;
-    Array_vec4 vel;
-    Array_vec4 trq;
+    Array_vec4s pos;
+    Array_vec4s vel;
+    Array_vec4s trq;
 };
 
 MovementComponent movementComponentAlloc(size_t allocsize) {
     return (MovementComponent) {
-        .pos = Array_vec4_create(allocsize),
-        .vel = Array_vec4_create(allocsize),
-        .trq = Array_vec4_create(allocsize),
+        .pos = Array_vec4s_create(allocsize),
+        .vel = Array_vec4s_create(allocsize),
+        .trq = Array_vec4s_create(allocsize),
     };
 }
 
@@ -56,22 +58,22 @@ struct ArchetypeHeader {
 typedef struct A A;
 struct A {
     ArchetypeHeader archetypeheader;
-    Array_vec4 pos;
-    Array_vec4 vel;
-    Array_vec4 trq;
+    Array_vec4s pos;
+    Array_vec4s vel;
+    Array_vec4s trq;
 };
 
 typedef struct B B;
 struct B {
     ArchetypeHeader archetypeheader;
-    Array_vec4 pos;
-    Array_vec4 vel;
+    Array_vec4s pos;
+    Array_vec4s vel;
 };
 
 typedef struct C C;
 struct C {
     ArchetypeHeader archetypeheader;
-    Array_vec4 pos;
+    Array_vec4s pos;
 };
 
 void Archetype_test() {
@@ -84,30 +86,33 @@ void Archetype_test() {
     Map_u64_set(&a.archetypeheader.offsetmap, "pos", offsetof(A, pos));
     Map_u64_set(&a.archetypeheader.offsetmap, "vel", offsetof(A, vel));
     Map_u64_set(&a.archetypeheader.offsetmap, "trq", offsetof(A, trq));
-    Array_vec4_append(&a.pos, (vec4){0.f});
-    Array_vec4_append(&a.pos, (vec4){2.f});
-    Array_vec4_append(&a.pos, (vec4){6.f});
-    Array_vec4_append(&a.vel, (vec4){1.f});
-    Array_vec4_append(&a.vel, (vec4){1.f});
-    Array_vec4_append(&a.vel, (vec4){1.f});
+    Array_vec4s_append(&a.pos, (vec4s){0.f});
+    Array_vec4s_append(&a.pos, (vec4s){2.f});
+    Array_vec4s_append(&a.pos, (vec4s){6.f});
+    Array_vec4s_append(&a.vel, (vec4s){1.f});
+    Array_vec4s_append(&a.vel, (vec4s){1.f});
+    Array_vec4s_append(&a.vel, (vec4s){1.f});
 
     b.archetypeheader.signature = pos | vel;
     b.archetypeheader.offsetmap = *Map_u64_create();
     Map_u64_set(&b.archetypeheader.offsetmap, "pos", offsetof(B, pos));
     Map_u64_set(&b.archetypeheader.offsetmap, "vel", offsetof(B, vel));
-    Array_vec4_append(&b.pos, (vec4){2.f});
-    Array_vec4_append(&b.pos, (vec4){2.f});
-    Array_vec4_append(&b.vel, (vec4){8.f});
-    Array_vec4_append(&b.vel, (vec4){8.f});
+    Array_vec4s_append(&b.pos, (vec4s){2.f});
+    Array_vec4s_append(&b.pos, (vec4s){2.f});
+    Array_vec4s_append(&b.vel, (vec4s){8.f});
+    Array_vec4s_append(&b.vel, (vec4s){8.f});
 
     c.archetypeheader.signature = pos;
     c.archetypeheader.offsetmap = *Map_u64_create();
     Map_u64_set(&c.archetypeheader.offsetmap, "pos", offsetof(C, pos));
 
-    void *typeerased[] = {&a, &b, &c};
+    Array_voidptr typeerased = {0};
+    Array_voidptr_append(&typeerased, &a);
+    Array_voidptr_append(&typeerased, &b);
+    Array_voidptr_append(&typeerased, &c);
 
-    for (i32 i = 0; i < sizeofarray(typeerased); i++) {
-        u8 signature = *((u8 *)(typeerased[i]));
+    for (i32 i = 0; i < typeerased.length; i++) {
+        u8 signature = *((u8 *)(typeerased.data[i]));
         if (queryTest(signature, pos | vel)) {
             printf("signature = %d\n", signature);
         }
@@ -117,21 +122,22 @@ void Archetype_test() {
     // printf("%p\n", typeerased[1]);
     // printf("%p\n", typeerased[2]);
 
-    for (i32 i = 0; i < sizeofarray(typeerased); i++) {
-        ArchetypeHeader archetypeheader = *((ArchetypeHeader *)typeerased[i]);
+    for (i32 i = 0; i < typeerased.length; i++) {
+        ArchetypeHeader archetypeheader = *((ArchetypeHeader *)typeerased.data[i]);
         u64 signature = archetypeheader.signature;
         Map_u64 offsetmap = archetypeheader.offsetmap;
         // printf("offsetmap border = %llu, offsetmap length = %llu\n", offsetmap.border, offsetmap.length);
         if (queryTest(signature, pos | vel)) {
             u64 posoff = *Map_u64_get(&offsetmap, "pos");
-            Array_vec4 *pos = (Array_vec4 *)((u8 *)typeerased[i] + posoff);
+            Array_vec4s *pos = (Array_vec4s *)((u8 *)typeerased.data[i] + posoff);
             u64 veloff = *Map_u64_get(&offsetmap, "vel");
-            Array_vec4 *vel = (Array_vec4 *)((u8 *)typeerased[i] + veloff);
+            Array_vec4s *vel = (Array_vec4s *)((u8 *)typeerased.data[i] + veloff);
             for (i32 i = 0; i < pos->length; ++i) {
-                pos->data[i].x += vel->data[i].x;
-                pos->data[i].y += vel->data[i].y;
-                pos->data[i].z += vel->data[i].z;
-                pos->data[i].w += vel->data[i].w;
+                pos->data[i] = glms_vec4_add(pos->data[i], vel->data[i]);
+                // pos->data[i].x += vel->data[i].x;
+                // pos->data[i].y += vel->data[i].y;
+                // pos->data[i].z += vel->data[i].z;
+                // pos->data[i].w += vel->data[i].w;
             }
             //---------------------------------------------------------------------------------------------------
             // printf("%p = &a \n", &a);
