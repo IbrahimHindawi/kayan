@@ -47,6 +47,7 @@
 #include <string.h>
 #define CORE_IMPL
 #include <core.h>
+#include <stdalign.h>
 #include <cglm/struct.h>
 
 #include "Arena.h"
@@ -152,6 +153,9 @@ i32 main(i32 argc, char *argv[]) {
     // Arena_test();
     Archetype_test();
     printf("kayan test end.\n");
+    printf("alignment %llu\n", alignof(i32));
+    printf("alignment %llu\n", alignof(Array_voidptr));
+    printf("alignment %llu\n", alignof(__m128));
     return 0;
 }
 
