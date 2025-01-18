@@ -78,6 +78,7 @@ struct C {
 };
 
 void Archetype_test() {
+    printf("kayan begin.\n");
     A a = {};
     B b = {};
     C c = {};
@@ -154,4 +155,5 @@ void Archetype_test() {
     printf("{%f, %f, %f}\n", a.pos.data[0].x, a.pos.data[0].y, a.pos.data[0].z);
     printf("{%f, %f, %f}\n", a.pos.data[1].x, a.pos.data[1].y, a.pos.data[1].z);
     printf("{%f, %f, %f}\n", a.pos.data[2].x, a.pos.data[2].y, a.pos.data[2].z);
+    printf("kayan end.\n");
 }
