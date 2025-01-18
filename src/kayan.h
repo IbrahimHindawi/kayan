@@ -1,3 +1,4 @@
+#pragma once
 #include <stdio.h>
 #include <intrin.h>
 // #include "vec3.h"
