@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#include <intrin.h>
+// #include <intrin.h>
 // #include "vec3.h"
 #include <cglm/struct.h>
 #include <Array.h>
