@@ -12,7 +12,7 @@ add_executable(${PROJECT_NAME}
     src/main.c
     src/fileops.c
 )
-# add_subdirectory(extern) # in case of modules...
+add_subdirectory(extern) # in case of modules...
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
