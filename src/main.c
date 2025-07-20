@@ -39,6 +39,7 @@
 //---------------------------------------------------------------------------------------------------
 // unions
 //---------------------------------------------------------------------------------------------------
+// haikal@Array:vec2s:u
 // haikal@Array:vec3s:u
 // haikal@Array:vec4s:u
 // haikal@Map:vec3s:u
@@ -50,7 +51,8 @@
 #include <stdalign.h>
 #include <cglm/struct.h>
 
-// #include "Arena.h"
+#define SAHA_IMPLEMENTATION
+#include "saha.h"
 
 #include <Array.h>
 #include <Node.h>
@@ -66,7 +68,9 @@
 
 i32 main(i32 argc, char *argv[]) {
     printf("kayan test begin.\n");
-    Archetype_test();
+    Arena arena = {};
+    arenaInit(&arena);
+    Archetype_test(&arena);
     printf("kayan test end.\n");
     return 0;
 }
