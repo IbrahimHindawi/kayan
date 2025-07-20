@@ -6,6 +6,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(your_target_name PRIVATE -Wno-missing-braces)
+endif()
+
 include_directories(extern/haikal/src/meta_arena/gen)
 include_directories(extern/cglm/include)
 add_executable(${PROJECT_NAME}

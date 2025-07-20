@@ -1,4 +1,8 @@
 #pragma once
+#include "Array_f32.h"
+#include "Array_i8.h"
+#include "Array_vec2s.h"
+#include "Array_vec4s.h"
 #include <stdio.h>
 // #include <intrin.h>
 // #include "vec3.h"
@@ -19,8 +23,15 @@ enum Signature {
     alive = 1ULL << 5,
 };
 
-bool queryTest(u64 a, u64 b) {
+bool kayan_query(u64 a, u64 b) {
     return (a & b) == b;
+}
+
+u64 kayan_entity_add(u64 *entity_data) {
+    // add bounds checking?
+    u64 old = *entity_data;
+    *entity_data += 1;
+    return old;
 }
 
 // components
@@ -64,7 +75,7 @@ struct ArchetypeHeader {
 
 typedef struct A A;
 struct A {
-    ArchetypeHeader archetypeheader;
+    ArchetypeHeader archetype_header;
     Array_vec4s positions;
     Array_vec4s velocities;
     Array_vec4s torque;
@@ -72,20 +83,20 @@ struct A {
 
 typedef struct B B;
 struct B {
-    ArchetypeHeader archetypeheader;
+    ArchetypeHeader archetype_header;
     Array_vec4s positions;
     Array_vec4s velocities;
 };
 
 typedef struct C C;
 struct C {
-    ArchetypeHeader archetypeheader;
+    ArchetypeHeader archetype_header;
     Array_vec4s positions;
 };
 
 typedef struct D D;
 struct D {
-    ArchetypeHeader archetypeheader;
+    ArchetypeHeader archetype_header;
     Array_vec4s positions;
     Array_vec4s velocities;
     Array_vec2s health; // {health, maxhealth}
@@ -95,82 +106,104 @@ struct D {
 
 void Archetype_test(Arena *arena) {
     printf("kayan begin.\n");
+
+    u64 entity_id = 0;
     A a = {};
+    entity_id = a.archetype_header.entity_count;
+    a.archetype_header.signature = positions | velocities | torque;
+    a.archetype_header.offsetmap = *Map_u64_create(arena);
+    Map_u64_set(arena, &a.archetype_header.offsetmap, "positions", offsetof(A, positions));
+    Map_u64_set(arena, &a.archetype_header.offsetmap, "velocities", offsetof(A, velocities));
+    Map_u64_set(arena, &a.archetype_header.offsetmap, "torque", offsetof(A, torque));
+    a.positions = Array_vec4s_reserve(arena, max_entity_count);
+    a.velocities = Array_vec4s_reserve(arena, max_entity_count);
+    a.torque = Array_vec4s_reserve(arena, max_entity_count);
+    entity_id = kayan_entity_add(&a.archetype_header.entity_count);
+    a.positions.data[entity_id] = (vec4s){0.f};
+    a.velocities.data[entity_id] = (vec4s){0.f};
+    a.torque.data[entity_id] = (vec4s){0.f};
+    entity_id = kayan_entity_add(&a.archetype_header.entity_count);
+    a.positions.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
+    a.velocities.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
+    a.torque.data[entity_id] = (vec4s){0.f, .1f, 0.f};
+    entity_id = kayan_entity_add(&a.archetype_header.entity_count);
+    a.positions.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
+    a.velocities.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
+    a.torque.data[entity_id] = (vec4s){0.f, .1f, 0.f};
+
     B b = {};
+    entity_id = a.archetype_header.entity_count;
+    b.archetype_header.signature = positions | velocities;
+    b.archetype_header.offsetmap = *Map_u64_create(arena);
+    Map_u64_set(arena, &b.archetype_header.offsetmap, "positions", offsetof(B, positions));
+    Map_u64_set(arena, &b.archetype_header.offsetmap, "velocities", offsetof(B, velocities));
+    b.positions = Array_vec4s_reserve(arena, max_entity_count);
+    b.velocities = Array_vec4s_reserve(arena, max_entity_count);
+    entity_id = kayan_entity_add(&a.archetype_header.entity_count);
+    b.positions.data[entity_id] = (vec4s){0.f};
+    b.velocities.data[entity_id] = (vec4s){0.f};
+    entity_id = kayan_entity_add(&a.archetype_header.entity_count);
+    b.positions.data[entity_id] = (vec4s){0.f};
+    b.velocities.data[entity_id] = (vec4s){1.f};
+
     C c = {};
+    c.archetype_header.signature = positions;
+    c.archetype_header.offsetmap = *Map_u64_create(arena);
+    Map_u64_set(arena, &c.archetype_header.offsetmap, "positions", offsetof(C, positions));
+    c.positions = Array_vec4s_reserve(arena, max_entity_count);
+
     D d = {};
-
-    a.archetypeheader.signature = positions | velocities | torque;
-    a.archetypeheader.offsetmap = *Map_u64_create(arena);
-    Map_u64_set(arena, &a.archetypeheader.offsetmap, "positions", offsetof(A, positions));
-    Map_u64_set(arena, &a.archetypeheader.offsetmap, "velocities", offsetof(A, velocities));
-    Map_u64_set(arena, &a.archetypeheader.offsetmap, "torque", offsetof(A, torque));
-    // Array_vec4s_create();
+    d.archetype_header.signature = health | damage | alive;
+    d.archetype_header.offsetmap = *Map_u64_create(arena);
+    Map_u64_set(arena, &d.archetype_header.offsetmap, "health", offsetof(D, health));
+    Map_u64_set(arena, &d.archetype_header.offsetmap, "damage", offsetof(D, damage));
+    Map_u64_set(arena, &d.archetype_header.offsetmap, "alive", offsetof(D, alive));
+    Map_u64_set(arena, &d.archetype_header.offsetmap, "positions", offsetof(D, positions));
+    Map_u64_set(arena, &d.archetype_header.offsetmap, "velocities", offsetof(D, velocities));
     // alloc entity count
-    Array_vec4s_append(arena, &a.positions, (vec4s){0.f});
-    Array_vec4s_append(arena, &a.positions, (vec4s){2.f});
-    Array_vec4s_append(arena, &a.positions, (vec4s){6.f});
-    Array_vec4s_append(arena, &a.velocities, (vec4s){1.f});
-    Array_vec4s_append(arena, &a.velocities, (vec4s){1.f});
-    Array_vec4s_append(arena, &a.velocities, (vec4s){1.f});
-
-    b.archetypeheader.signature = positions | velocities;
-    b.archetypeheader.offsetmap = *Map_u64_create(arena);
-    Map_u64_set(arena, &b.archetypeheader.offsetmap, "positions", offsetof(B, positions));
-    Map_u64_set(arena, &b.archetypeheader.offsetmap, "velocities", offsetof(B, velocities));
-    // alloc entity count
-    Array_vec4s_append(arena, &b.positions, (vec4s){2.f});
-    Array_vec4s_append(arena, &b.positions, (vec4s){2.f});
-    Array_vec4s_append(arena, &b.velocities, (vec4s){8.f});
-    Array_vec4s_append(arena, &b.velocities, (vec4s){8.f});
-
-    c.archetypeheader.signature = positions;
-    c.archetypeheader.offsetmap = *Map_u64_create(arena);
-    Map_u64_set(arena, &c.archetypeheader.offsetmap, "positions", offsetof(C, positions));
-
-    d.archetypeheader.signature = health | damage | alive;
-    d.archetypeheader.offsetmap = *Map_u64_create(arena);
-    Map_u64_set(arena, &d.archetypeheader.offsetmap, "health", offsetof(D, health));
-    Map_u64_set(arena, &d.archetypeheader.offsetmap, "damage", offsetof(D, damage));
-    Map_u64_set(arena, &d.archetypeheader.offsetmap, "alive", offsetof(D, alive));
-    Map_u64_set(arena, &d.archetypeheader.offsetmap, "positions", offsetof(D, positions));
-    Map_u64_set(arena, &d.archetypeheader.offsetmap, "velocities", offsetof(D, velocities));
-    // alloc entity count
-    Array_vec2s_append(arena, &d.health, (vec2s){100.f, 100.f});
-    Array_vec2s_append(arena, &d.health, (vec2s){100.f, 100.f});
-    Array_vec2s_append(arena, &d.health, (vec2s){100.f, 100.f});
-    Array_i8_append(arena, &d.alive, true);
-    Array_i8_append(arena, &d.alive, true);
-    Array_i8_append(arena, &d.alive, true);
-    Array_f32_append(arena, &d.damage, 25.f);
-    Array_f32_append(arena, &d.damage, 25.f);
-    Array_f32_append(arena, &d.damage, 25.f);
+    d.positions = Array_vec4s_reserve(arena, max_entity_count); 
+    d.velocities = Array_vec4s_reserve(arena, max_entity_count); 
+    d.health = Array_vec2s_reserve(arena, max_entity_count); 
+    d.damage = Array_f32_reserve(arena, max_entity_count); 
+    d.alive = Array_i8_reserve(arena, max_entity_count); 
+    entity_id = kayan_entity_add(&a.archetype_header.entity_count);
+    d.positions.data[entity_id] = (vec4s){0.f};
+    d.velocities.data[entity_id] = (vec4s){0.f};
+    d.health.data[entity_id] = (vec2s){100.f, 100.f};
+    d.alive.data[entity_id] = true;
+    d.damage.data[entity_id] = 25.f;
+    entity_id = kayan_entity_add(&a.archetype_header.entity_count);
+    d.positions.data[entity_id] = (vec4s){1.f};
+    d.velocities.data[entity_id] = (vec4s){1.f};
+    d.health.data[entity_id] = (vec2s){100.f, 100.f};
+    d.alive.data[entity_id] = true;
+    d.damage.data[entity_id] = 25.f;
 
     // archetype array
-    Array_voidptr typeerased = {0};
-    Array_voidptr_append(arena, &typeerased, &a);
-    Array_voidptr_append(arena, &typeerased, &b);
-    Array_voidptr_append(arena, &typeerased, &c);
-    Array_voidptr_append(arena, &typeerased, &d);
+    Array_voidptr type_erased = {0};
+    Array_voidptr_append(arena, &type_erased, &a);
+    Array_voidptr_append(arena, &type_erased, &b);
+    Array_voidptr_append(arena, &type_erased, &c);
+    Array_voidptr_append(arena, &type_erased, &d);
 
-    for (i32 i = 0; i < typeerased.length; i++) {
-        u8 signature = *((u8 *)(typeerased.data[i]));
-        if (queryTest(signature, positions | velocities)) {
+    for (i32 i = 0; i < type_erased.length; i++) {
+        u8 signature = *((u8 *)(type_erased.data[i]));
+        if (kayan_query(signature, positions | velocities)) {
             printf("signature = %d\n", signature);
         }
     }
 
-    // printf("%p\n", typeerased[0]);
-    // printf("%p\n", typeerased[1]);
-    // printf("%p\n", typeerased[2]);
+    // printf("%p\n", type_erased[0]);
+    // printf("%p\n", type_erased[1]);
+    // printf("%p\n", type_erased[2]);
 
-    for (i32 i = 0; i < typeerased.length; i++) {
-        ArchetypeHeader archetypeheader = *((ArchetypeHeader *)typeerased.data[i]);
-        Map_u64 offsetmap = archetypeheader.offsetmap;
+    for (i32 i = 0; i < type_erased.length; i++) {
+        ArchetypeHeader archetype_header = *((ArchetypeHeader *)type_erased.data[i]);
+        Map_u64 offsetmap = archetype_header.offsetmap;
         // printf("offsetmap border = %llu, offsetmap length = %llu\n", offsetmap.border, offsetmap.length);
-        if (queryTest(archetypeheader.signature, positions | velocities)) {
-            Array_vec4s *positions = (Array_vec4s *)((u8 *)typeerased.data[i] + *Map_u64_get(arena, &offsetmap, "positions"));
-            Array_vec4s *velocities = (Array_vec4s *)((u8 *)typeerased.data[i] + *Map_u64_get(arena, &offsetmap, "velocities"));
+        if (kayan_query(archetype_header.signature, positions | velocities)) {
+            Array_vec4s *positions = (Array_vec4s *)((u8 *)type_erased.data[i] + *Map_u64_get(arena, &offsetmap, "positions"));
+            Array_vec4s *velocities = (Array_vec4s *)((u8 *)type_erased.data[i] + *Map_u64_get(arena, &offsetmap, "velocities"));
             for (i32 i = 0; i < positions->length; ++i) {
                 positions->data[i] = glms_vec4_add(positions->data[i], velocities->data[i]);
                 // positions->data[i].x += velocities->data[i].x;
