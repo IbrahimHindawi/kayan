@@ -160,7 +160,6 @@ void kayan_main(Arena *arena) {
     Map_u64_set(arena, &d.archetype_header.offsetmap, "alive", offsetof(D, alive));
     Map_u64_set(arena, &d.archetype_header.offsetmap, "positions", offsetof(D, positions));
     Map_u64_set(arena, &d.archetype_header.offsetmap, "velocities", offsetof(D, velocities));
-    // alloc entity count
     d.positions = Array_vec4s_reserve(arena, max_entity_count); 
     d.velocities = Array_vec4s_reserve(arena, max_entity_count); 
     d.health = Array_vec2s_reserve(arena, max_entity_count); 
@@ -193,37 +192,16 @@ void kayan_main(Arena *arena) {
         }
     }
 
-    // printf("%p\n", type_erased[0]);
-    // printf("%p\n", type_erased[1]);
-    // printf("%p\n", type_erased[2]);
-
     for (i32 i = 0; i < type_erased.length; i++) {
         ArchetypeHeader archetype_header = *((ArchetypeHeader *)type_erased.data[i]);
         Map_u64 offsetmap = archetype_header.offsetmap;
-        // printf("offsetmap border = %llu, offsetmap length = %llu\n", offsetmap.border, offsetmap.length);
         if (kayan_query(archetype_header.signature, positions | velocities)) {
             Array_vec4s *positions = (Array_vec4s *)((u8 *)type_erased.data[i] + *Map_u64_get(arena, &offsetmap, "positions"));
             Array_vec4s *velocities = (Array_vec4s *)((u8 *)type_erased.data[i] + *Map_u64_get(arena, &offsetmap, "velocities"));
             for (i32 i = 0; i < positions->length; ++i) {
                 positions->data[i] = glms_vec4_add(positions->data[i], velocities->data[i]);
-                // positions->data[i].x += velocities->data[i].x;
-                // positions->data[i].y += velocities->data[i].y;
-                // positions->data[i].z += velocities->data[i].z;
-                // positions->data[i].w += velocities->data[i].w;
             }
-            //---------------------------------------------------------------------------------------------------
-            // printf("%p = &a \n", &a);
-            // printf("%p = &a.positions\n", &a.positions);
-            // printf("%p = &a.velocities\n", &a.velocities);
-            // printf("%llu\n", a.positions.length);
-            // printf("%llu\n", a.velocities.length);
-            // printf("%llu\n", positions->length);
-            // printf("%llu\n", velocities->length);
-            // printf("%p = &positions\n", positions);
         }
     }
-    printf("{%f, %f, %f}\n", a.positions.data[0].x, a.positions.data[0].y, a.positions.data[0].z);
-    printf("{%f, %f, %f}\n", a.positions.data[1].x, a.positions.data[1].y, a.positions.data[1].z);
-    printf("{%f, %f, %f}\n", a.positions.data[2].x, a.positions.data[2].y, a.positions.data[2].z);
     printf("kayan end.\n");
 }
