@@ -70,7 +70,7 @@ i32 main(i32 argc, char *argv[]) {
     printf("kayan test begin.\n");
     Arena arena = {};
     arenaInit(&arena);
-    Archetype_test(&arena);
+    kayan_main(&arena);
     printf("kayan test end.\n");
     return 0;
 }

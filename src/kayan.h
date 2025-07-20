@@ -104,7 +104,7 @@ struct D {
     Array_i8 alive;
 };
 
-void Archetype_test(Arena *arena) {
+void kayan_main(Arena *arena) {
     printf("kayan begin.\n");
 
     u64 entity_id = 0;
@@ -119,17 +119,17 @@ void Archetype_test(Arena *arena) {
     a.velocities = Array_vec4s_reserve(arena, max_entity_count);
     a.torque = Array_vec4s_reserve(arena, max_entity_count);
     entity_id = kayan_entity_add(&a.archetype_header.entity_count);
-    a.positions.data[entity_id] = (vec4s){0.f};
-    a.velocities.data[entity_id] = (vec4s){0.f};
-    a.torque.data[entity_id] = (vec4s){0.f};
+    Array_vec4s_append(arena, &a.positions, (vec4s){0.f});
+    Array_vec4s_append(arena, &a.velocities, (vec4s){0.f});
+    Array_vec4s_append(arena, &a.torque, (vec4s){0.f});
     entity_id = kayan_entity_add(&a.archetype_header.entity_count);
-    a.positions.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
-    a.velocities.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
-    a.torque.data[entity_id] = (vec4s){0.f, .1f, 0.f};
+    Array_vec4s_append(arena, &a.positions, (vec4s){0.f, 1.f, 0.f});
+    Array_vec4s_append(arena, &a.velocities, (vec4s){0.f, 1.f, 0.f});
+    Array_vec4s_append(arena, &a.torque, (vec4s){0.f, .1f, 0.f});
     entity_id = kayan_entity_add(&a.archetype_header.entity_count);
-    a.positions.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
-    a.velocities.data[entity_id] = (vec4s){0.f, 1.f, 0.f};
-    a.torque.data[entity_id] = (vec4s){0.f, .1f, 0.f};
+    Array_vec4s_append(arena, &a.positions, (vec4s){0.f, 1.f, 0.f});
+    Array_vec4s_append(arena, &a.velocities, (vec4s){0.f, 1.f, 0.f});
+    Array_vec4s_append(arena, &a.torque, (vec4s){0.f, .1f, 0.f});
 
     B b = {};
     entity_id = a.archetype_header.entity_count;
@@ -140,11 +140,11 @@ void Archetype_test(Arena *arena) {
     b.positions = Array_vec4s_reserve(arena, max_entity_count);
     b.velocities = Array_vec4s_reserve(arena, max_entity_count);
     entity_id = kayan_entity_add(&a.archetype_header.entity_count);
-    b.positions.data[entity_id] = (vec4s){0.f};
-    b.velocities.data[entity_id] = (vec4s){0.f};
+    Array_vec4s_append(arena, &b.positions, (vec4s){0.f, 1.f, 0.f});
+    Array_vec4s_append(arena, &b.velocities, (vec4s){0.f, 1.f, 0.f});
     entity_id = kayan_entity_add(&a.archetype_header.entity_count);
-    b.positions.data[entity_id] = (vec4s){0.f};
-    b.velocities.data[entity_id] = (vec4s){1.f};
+    Array_vec4s_append(arena, &b.positions, (vec4s){0.f, 1.f, 0.f});
+    Array_vec4s_append(arena, &b.velocities, (vec4s){0.f, 1.f, 0.f});
 
     C c = {};
     c.archetype_header.signature = positions;
@@ -167,17 +167,17 @@ void Archetype_test(Arena *arena) {
     d.damage = Array_f32_reserve(arena, max_entity_count); 
     d.alive = Array_i8_reserve(arena, max_entity_count); 
     entity_id = kayan_entity_add(&a.archetype_header.entity_count);
-    d.positions.data[entity_id] = (vec4s){0.f};
-    d.velocities.data[entity_id] = (vec4s){0.f};
-    d.health.data[entity_id] = (vec2s){100.f, 100.f};
-    d.alive.data[entity_id] = true;
-    d.damage.data[entity_id] = 25.f;
+    Array_vec4s_append(arena, &d.positions, (vec4s){0.f});
+    Array_vec4s_append(arena, &d.velocities, (vec4s){0.f});
+    Array_vec2s_append(arena, &d.health, (vec2s){100.f, 100.f});
+    Array_i8_append(arena, &d.alive, true);
+    Array_f32_append(arena, &d.damage, 25.f);
     entity_id = kayan_entity_add(&a.archetype_header.entity_count);
-    d.positions.data[entity_id] = (vec4s){1.f};
-    d.velocities.data[entity_id] = (vec4s){1.f};
-    d.health.data[entity_id] = (vec2s){100.f, 100.f};
-    d.alive.data[entity_id] = true;
-    d.damage.data[entity_id] = 25.f;
+    Array_vec4s_append(arena, &d.positions, (vec4s){1.f});
+    Array_vec4s_append(arena, &d.velocities, (vec4s){1.f});
+    Array_vec2s_append(arena, &d.health, (vec2s){100.f, 100.f});
+    Array_i8_append(arena, &d.alive, true);
+    Array_f32_append(arena, &d.damage, 25.f);
 
     // archetype array
     Array_voidptr type_erased = {0};
@@ -187,9 +187,9 @@ void Archetype_test(Arena *arena) {
     Array_voidptr_append(arena, &type_erased, &d);
 
     for (i32 i = 0; i < type_erased.length; i++) {
-        u8 signature = *((u8 *)(type_erased.data[i]));
-        if (kayan_query(signature, positions | velocities)) {
-            printf("signature = %d\n", signature);
+        ArchetypeHeader archetype_header = *((ArchetypeHeader *)type_erased.data[i]);
+        if (kayan_query(archetype_header.signature, positions | velocities)) {
+            printf("signature = %llu\n", archetype_header.signature);
         }
     }
 
